@@ -30,7 +30,8 @@ int main(){
 
             case 1:
                 if(!isUserLogged){
-                    userID = LoginUser();
+                    userID = LoginUser(db_connection);
+                    cout << "Welcome back!" << endl;
                 }else{
                     //TODO: user is logged in, start OpenNewAccount phase.
                 }
