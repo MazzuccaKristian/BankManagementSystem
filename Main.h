@@ -89,9 +89,11 @@ int LoginUser(sql::Connection *con){
                 // Start login phase.
                 id = Login(con);
                 if(id < 0){
-                    // User not found in DB, try again.
-                    continue;
+                    isOptionValid = false;
+                    cout << "Username or password incorrect. Please, try again..." << endl;
                 }
+                break;
+
 
             //TODO: CASE 2 => start registration phase
             case 2:
@@ -126,7 +128,7 @@ int Login(sql::Connection *con){
         if(res -> next()){
             id = res -> getInt(1);
         }else{
-            cout << "Empty resultset, user not found" << endl;
+            // Empty resultset -> user not found in DB
             id = -1;
         }
         delete res;
