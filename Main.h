@@ -98,6 +98,9 @@ int LoginUser(sql::Connection *con){
             //TODO: CASE 2 => start registration phase
             case 2:
                 Registration(con);
+                //TODO: registration OK, show message and go to login.
+                cout << "Registration completed! Please, log in..." << endl;
+                isOptionValid = false;
 
             //TODO: default => input NOT correct, ask new params from user and try again.
         }
@@ -161,28 +164,32 @@ void DBSetup(sql::Connection *con){
 
 void Registration(sql::Connection *con){
     string username, password, confirmPassword;
+    bool registrationSuccess = false;
     cin.ignore();
-    cout << "Enter your username: ";
-    getline(cin, username);
-    cout << "Enter your password: ";
-    getline(cin, password);
-    cout << "Please, confirm your password: ";
-    getline(cin, confirmPassword);
-    if(password.compare(confirmPassword) == 0){
-        // DB registration phase starts here.
-        try{
-            sql::Statement *stmt;
-            //TODO: possible switch to PreparedStatement
-            string query = "INSERT INTO Users(Username, Password) VALUES ('" + username + "', '" + password + "')";
-            stmt = con -> createStatement();
-            stmt -> execute(query);
-            delete stmt;
-        }catch(sql::SQLException e){
-            cout << "ERROR (registration): " << e.what() << endl;
+    do{
+        cout << "Enter your username: ";
+        getline(cin, username);
+        cout << "Enter your password: ";
+        getline(cin, password);
+        cout << "Please, confirm your password: ";
+        getline(cin, confirmPassword);
+        if(password.compare(confirmPassword) == 0){
+            // DB registration phase starts here.
+            try{
+                sql::Statement *stmt;
+                //TODO: possible switch to PreparedStatement
+                string query = "INSERT INTO Users(Username, Password) VALUES ('" + username + "', '" + password + "')";
+                stmt = con -> createStatement();
+                stmt -> execute(query);
+                delete stmt;
+                registrationSuccess = true;
+            }catch(sql::SQLException e){
+                cout << "ERROR (registration): " << e.what() << endl;
+            }
+        }else{
+            // password and confirm mismatched. Try again this phase.
+            cout << "Your passwords don't match. Please, try again..." << endl;
+            registrationSuccess = false;
         }
-    }else{
-        //password and confirmPassword are different.
-        //TODO: handle this error and try again
-        cout << "Your passwords don't match. Please, try again..." << endl;
-    }
+    }while(!registrationSuccess);
 }
