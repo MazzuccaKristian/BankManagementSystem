@@ -9,7 +9,7 @@ int main(){
     sql::Driver *db_driver;
     sql::Connection *db_connection;
     db_driver = get_driver_instance();
-    db_connection = db_driver -> connect(DB_HOST, DB_USER, DB_PPWW);
+    db_connection = db_driver -> connect(db_host_complete, db_user, db_password);
 
     cout << "Connecting. Please, wait..." << endl;
     DBSetup(db_connection);
@@ -30,11 +30,16 @@ int main(){
 
             case 1:
                 if(!isUserLogged){
-                    userID = LoginUser(db_connection);
+                    userID = StartLoginPhase(db_connection);
                     cout << "Welcome back!" << endl;
                 }else{
-                    //TODO: user is logged in, start OpenNewAccount phase.
+                    //user's logged in and his account already exists.
+                    // OpenNewAccount();
                 }
+                break;
+
+            case 2:
+                ShowBalance(userID, db_connection);
         }
     }while(isStillWorking);
 
