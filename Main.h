@@ -22,13 +22,18 @@ using std::endl;
 using std::cin;
 using std::string;
 
+const string db_user = "bankuser";
+const string db_host_complete = "tcp://127.0.0.1:3306";
+const string db_password = "password";
+
 void ShowMainMenu();
 int GetUserChoice();
 bool InputValidation(int input);
-int LoginUser(sql::Connection *con);
+int StartLoginPhase(sql::Connection *con);
 int Login(sql::Connection *con);
 void DBSetup(sql::Connection *con);
 void Registration(sql::Connection *con);
+void ShowBalance(int userId, sql::Connection *con);
 
 void ShowMainMenu(){
     std::cout << "--- MAIN MENU ---" << std::endl;
@@ -74,7 +79,7 @@ bool InputValidation(int input){
  * 
  * @return int - userID from database.
  */
-int LoginUser(sql::Connection *con){
+int StartLoginPhase(sql::Connection *con){
     bool isOptionValid = true;
     int input;
     int id;
@@ -91,6 +96,8 @@ int LoginUser(sql::Connection *con){
                 if(id < 0){
                     isOptionValid = false;
                     cout << "Username or password incorrect. Please, try again..." << endl;
+                }else{
+                    isOptionValid = true;
                 }
                 break;
 
@@ -121,6 +128,17 @@ int Login(sql::Connection *con){
     getline(cin, username);
     cout << "Enter your password: ";
     getline(cin, password);
+    // connection test
+    // TODO: this test can be a function, used many times.
+    if(!con -> isValid()){
+        // Here if connection's down, attempt reconnection.
+        cout << "Reconnecting. Please, wait..." << endl;
+        con -> reconnect();
+        if(!con -> isValid()){
+            // Can't reach DB.
+            exit(EXIT_FAILURE);
+        }
+    }
     try{
         sql::Statement *stmt;
         sql::ResultSet *res;
@@ -153,7 +171,7 @@ void DBSetup(sql::Connection *con){
         sql::ResultSet *res;
         stmt = con -> createStatement();
         // stmt -> execute("USE sql4482158");
-        con -> setSchema("sql4482158");
+        con -> setSchema("BankDB");
         stmt -> execute(SETUP_QUERY);
         delete res;
         delete stmt;
@@ -174,6 +192,17 @@ void Registration(sql::Connection *con){
         cout << "Please, confirm your password: ";
         getline(cin, confirmPassword);
         if(password.compare(confirmPassword) == 0){
+            // Test DB connection
+            // TODO: this test can be a function, used many times.
+            if(!con -> isValid()){
+                // Here if connection's down, attempt reconnection.
+                cout << "Reconnecting. Please, wait..." << endl;
+                con -> reconnect();
+                if(!con -> isValid()){
+                    // Can't reach DB.
+                    exit(EXIT_FAILURE);
+                }
+            }       
             // DB registration phase starts here.
             try{
                 sql::Statement *stmt;
@@ -192,4 +221,30 @@ void Registration(sql::Connection *con){
             registrationSuccess = false;
         }
     }while(!registrationSuccess);
+}
+
+void ShowBalance(int userId, sql::Connection *con){
+    // TODO: this test can be a function, used many times.
+    if(!con -> isValid()){
+        // Here if connection's down, attempt reconnection.
+        cout << "Reconnecting. Please, wait..." << endl;
+        con -> reconnect();
+        if(!con -> isValid()){
+            // Can't reach DB.
+            exit(EXIT_FAILURE);
+        }
+    } 
+    try{
+        sql::Statement *stmt;
+        sql::ResultSet *result;
+        stmt = con -> createStatement();
+        result = stmt -> executeQuery("SELECT Balance FROM Users WHERE Id='" + std::to_string(userId) + "'");
+        while(result -> next()){
+            cout << "Balance: " << result -> getDouble("Balance") << "$" << endl;
+        }
+        delete stmt;
+        delete result;
+    }catch(sql::SQLException e){
+        cout << "ERROR (registration): " << e.what() << endl;
+    }
 }
