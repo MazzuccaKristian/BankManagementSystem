@@ -33,6 +33,12 @@ BankManagementSystem requires ... to run.
    sudo service mysql start
    # Create 'BankDB' database
    mysql> CREATE DATABASE IF NOT EXISTS BankDB;
+   # Create 'Users' table
+   mysql> CREATE TABLE IF NOT EXISTS Users(
+            Id INT AUTO_INCREMENT PRIMARY KEY,
+            Username VARCHAR(30) NOT NULL,
+            Password VARCHAR(30) NOT NULL,
+            Balance DECIMAL(8,2) DEFAULT 0.0);
    ```
 5. Create user 'bankuser':
    ```sh
