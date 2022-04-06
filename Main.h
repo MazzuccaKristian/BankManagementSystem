@@ -35,6 +35,7 @@ void DBSetup(sql::Connection *con);
 void Registration(sql::Connection *con);
 void ShowBalance(int userId, sql::Connection *con);
 void MakeNewDeposit(int userId, double deposit, sql::Connection *con);
+void Withdarw(int userId, double amount, sql::Connection *con);
 
 void ShowMainMenu(){
     std::cout << "--- MAIN MENU ---" << std::endl;
@@ -269,5 +270,38 @@ void MakeNewDeposit(int userId, double deposit, sql::Connection *con){
         delete stmt;
     }catch(sql::SQLException e){
         cout << "ERROR (new deposit): " << e.what() << endl;
+    }
+}
+
+void Withdraw(int userId, double amount, sql::Connection *con){
+    double actualBalance, newBalance;
+    if(!con -> isValid()){
+        // Here if connection's down, attempt reconnection.
+        cout << "Reconnecting. Please, wait..." << endl;
+        con -> reconnect();
+        if(!con -> isValid()){
+            // Can't reach DB.
+            exit(EXIT_FAILURE);
+        }
+    }
+    try{
+        sql::Statement *stmt;
+        sql::ResultSet *res;
+        string query1 = "SELECT Balance FROM Users WHERE ID = '" + std::to_string(userId) + "'";
+        stmt = con -> createStatement();
+        res = stmt -> executeQuery(query1);
+        while(res -> next()){
+            actualBalance = res -> getDouble("Balance");
+        }
+        delete stmt;
+        delete res;
+        newBalance = actualBalance - amount;
+        string query2 = "UPDATE Users SET Balance = '" + std::to_string(newBalance) + "' WHERE ID = '" + std::to_string(userId) + "'";
+        sql::Statement *stmt1;
+        stmt1 = con -> createStatement();
+        stmt1 -> execute(query2);
+        delete stmt1;
+    }catch(sql::SQLException e){
+        cout << "ERROR (withdraw): " << e.what() << endl;
     }
 }
