@@ -47,5 +47,5 @@ BankManagementSystem requires ... to run.
    ```
 6. Compile code:
    ```sh
-   g++ -std=c++11 -o Main Main.cpp - lmysqlcppconn
+   g++ -std=c++11 -o Main Main.cpp -lmysqlcppconn
    ```
