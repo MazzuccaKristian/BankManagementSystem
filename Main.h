@@ -34,6 +34,7 @@ int Login(sql::Connection *con);
 void DBSetup(sql::Connection *con);
 void Registration(sql::Connection *con);
 void ShowBalance(int userId, sql::Connection *con);
+void MakeNewDeposit(int userId, double deposit, sql::Connection *con);
 
 void ShowMainMenu(){
     std::cout << "--- MAIN MENU ---" << std::endl;
@@ -246,5 +247,27 @@ void ShowBalance(int userId, sql::Connection *con){
         delete result;
     }catch(sql::SQLException e){
         cout << "ERROR (registration): " << e.what() << endl;
+    }
+}
+
+void MakeNewDeposit(int userId, double deposit, sql::Connection *con){
+    // TODO: this test can be a function, used many times.
+    if(!con -> isValid()){
+        // Here if connection's down, attempt reconnection.
+        cout << "Reconnecting. Please, wait..." << endl;
+        con -> reconnect();
+        if(!con -> isValid()){
+            // Can't reach DB.
+            exit(EXIT_FAILURE);
+        }
+    }
+    try{
+        sql::Statement *stmt;
+        string query = "UPDATE Users SET Balance = '" + std::to_string(deposit) + "' WHERE ID = '" + std::to_string(userId) + "'";
+        stmt = con -> createStatement();
+        stmt -> execute(query);
+        delete stmt;
+    }catch(sql::SQLException e){
+        cout << "ERROR (new deposit): " << e.what() << endl;
     }
 }
