@@ -8,34 +8,24 @@
 #include <cppconn/exception.h>
 #include <cppconn/resultset.h>
 #include <cppconn/statement.h>
-#include "Credentials.h"
-
-//* Queries
-#define SETUP_QUERY "CREATE TABLE IF NOT EXISTS Users( \
-                        Id INT AUTO_INCREMENT PRIMARY KEY, \
-                        Username VARCHAR(30) NOT NULL, \
-                        Password VARCHAR(30) NOT NULL, \
-                        Balance DECIMAL(8,2) DEFAULT 0.0)"
+#include <cppconn/prepared_statement.h>
+#include "DB_utils.h"
 
 using std::cout;
 using std::endl;
 using std::cin;
 using std::string;
 
-const string db_user = "bankuser";
-const string db_host_complete = "tcp://127.0.0.1:3306";
-const string db_password = "password";
-
 void ShowMainMenu();
 int GetUserChoice();
 bool InputValidation(int input);
 int StartLoginPhase(sql::Connection *con);
 int Login(sql::Connection *con);
-void DBSetup(sql::Connection *con);
 void Registration(sql::Connection *con);
 void ShowBalance(int userId, sql::Connection *con);
 void MakeNewDeposit(int userId, double deposit, sql::Connection *con);
 void Withdarw(int userId, double amount, sql::Connection *con);
+void UpdateBalance(sql::Connection *con,int userId, double amount);
 
 void ShowMainMenu(){
     std::cout << "--- MAIN MENU ---" << std::endl;
@@ -83,17 +73,16 @@ bool InputValidation(int input){
  */
 int StartLoginPhase(sql::Connection *con){
     bool isOptionValid = true;
-    int input;
     int id;
     do{
-        cout << "--- MENU ---" << endl;
+    int input;
+        cout << "--- LOGIN MENU ---" << endl;
         cout << "1. Login;" << endl;
         cout << "2. Registration" << endl;
         cout << "Enter your choice: ";
         cin >> input;
         switch(input){
             case 1:
-                // Start login phase.
                 id = Login(con);
                 if(id < 0){
                     isOptionValid = false;
@@ -103,15 +92,18 @@ int StartLoginPhase(sql::Connection *con){
                 }
                 break;
 
-
-            //TODO: CASE 2 => start registration phase
             case 2:
                 Registration(con);
-                //TODO: registration OK, show message and go to login.
                 cout << "Registration completed! Please, log in..." << endl;
                 isOptionValid = false;
+                break;
 
-            //TODO: default => input NOT correct, ask new params from user and try again.
+            default:
+                cout << "Option not allowed. Try again..." << endl;
+                isOptionValid = false;
+                cin.clear();
+                cin.ignore();
+                break;
         }
     }while(!isOptionValid);
     return id;
@@ -142,44 +134,23 @@ int Login(sql::Connection *con){
         }
     }
     try{
-        sql::Statement *stmt;
+        sql::PreparedStatement *p_stmt;
         sql::ResultSet *res;
-        //TODO: possible switch to PreparedStatement
-        string query = "SELECT Id FROM Users WHERE Username = '" + username + "' AND Password = '" + password + "'";
-        stmt = con -> createStatement();
-        res = stmt -> executeQuery(query);
+        p_stmt = con -> prepareStatement(login_query);
+        p_stmt -> setString(1, username);
+        p_stmt -> setString(2, password);
+        res = p_stmt -> executeQuery();
         if(res -> next()){
             id = res -> getInt(1);
         }else{
-            // Empty resultset -> user not found in DB
             id = -1;
         }
+        delete p_stmt;
         delete res;
-        delete stmt;
     }catch(sql::SQLException e){
         cout << "ERROR (login): " << e.what() << endl;
     }
     return id;
-}
-
-/**
- * @brief First connection to DB
- * 
- * @param con SQL connection (MySQL Connector/C++)
- */
-void DBSetup(sql::Connection *con){
-    try{
-        sql::Statement *stmt;
-        sql::ResultSet *res;
-        stmt = con -> createStatement();
-        // stmt -> execute("USE sql4482158");
-        con -> setSchema("BankDB");
-        stmt -> execute(SETUP_QUERY);
-        delete res;
-        delete stmt;
-    }catch(sql::SQLException e){
-        cout << "ERROR: " << e.what() << endl;
-    }
 }
 
 void Registration(sql::Connection *con){
@@ -195,24 +166,17 @@ void Registration(sql::Connection *con){
         getline(cin, confirmPassword);
         if(password.compare(confirmPassword) == 0){
             // Test DB connection
-            // TODO: this test can be a function, used many times.
             if(!con -> isValid()){
-                // Here if connection's down, attempt reconnection.
-                cout << "Reconnecting. Please, wait..." << endl;
-                con -> reconnect();
-                if(!con -> isValid()){
-                    // Can't reach DB.
-                    exit(EXIT_FAILURE);
-                }
+                exit(EXIT_FAILURE);
             }       
             // DB registration phase starts here.
             try{
-                sql::Statement *stmt;
-                //TODO: possible switch to PreparedStatement
-                string query = "INSERT INTO Users(Username, Password) VALUES ('" + username + "', '" + password + "')";
-                stmt = con -> createStatement();
-                stmt -> execute(query);
-                delete stmt;
+                sql::PreparedStatement *p_stmt;
+                p_stmt = con -> prepareStatement(registration_query);
+                p_stmt -> setString(1, username);
+                p_stmt -> setString(2, password);
+                p_stmt -> executeQuery();
+                delete p_stmt;
                 registrationSuccess = true;
             }catch(sql::SQLException e){
                 cout << "ERROR (registration): " << e.what() << endl;
@@ -237,21 +201,26 @@ void ShowBalance(int userId, sql::Connection *con){
         }
     } 
     try{
-        sql::Statement *stmt;
-        sql::ResultSet *result;
-        stmt = con -> createStatement();
-        result = stmt -> executeQuery("SELECT Balance FROM Users WHERE Id='" + std::to_string(userId) + "'");
-        while(result -> next()){
-            cout << "Balance: " << result -> getDouble("Balance") << "$" << endl;
+        sql::PreparedStatement *p_stmt;
+        sql::ResultSet *res;
+        p_stmt = con -> prepareStatement(showBalance_query);
+        p_stmt -> setInt(1, userId);
+        res = p_stmt -> executeQuery();
+        while(res -> next()){
+            cout << "Balance: " << res -> getDouble("Balance") << "$" << endl;
         }
-        delete stmt;
-        delete result;
+        delete p_stmt;
+        delete res;
     }catch(sql::SQLException e){
         cout << "ERROR (registration): " << e.what() << endl;
     }
 }
 
 void MakeNewDeposit(int userId, double deposit, sql::Connection *con){
+    double originalBalance, newBalance;
+    if(deposit < 0){
+        deposit = -deposit;
+    }
     // TODO: this test can be a function, used many times.
     if(!con -> isValid()){
         // Here if connection's down, attempt reconnection.
@@ -262,19 +231,14 @@ void MakeNewDeposit(int userId, double deposit, sql::Connection *con){
             exit(EXIT_FAILURE);
         }
     }
-    try{
-        sql::Statement *stmt;
-        string query = "UPDATE Users SET Balance = '" + std::to_string(deposit) + "' WHERE ID = '" + std::to_string(userId) + "'";
-        stmt = con -> createStatement();
-        stmt -> execute(query);
-        delete stmt;
-    }catch(sql::SQLException e){
-        cout << "ERROR (new deposit): " << e.what() << endl;
-    }
+    UpdateBalance(con, userId, deposit);
 }
 
 void Withdraw(int userId, double amount, sql::Connection *con){
-    double actualBalance, newBalance;
+    double originalBalance, newBalance;
+    if(amount > 0){
+        amount = -amount;
+    }
     if(!con -> isValid()){
         // Here if connection's down, attempt reconnection.
         cout << "Reconnecting. Please, wait..." << endl;
@@ -284,23 +248,30 @@ void Withdraw(int userId, double amount, sql::Connection *con){
             exit(EXIT_FAILURE);
         }
     }
+    UpdateBalance(con, userId, amount);
+}
+
+void UpdateBalance(sql::Connection *con,int userId, double amount){
+    double originalBalance, newBalance;
     try{
-        sql::Statement *stmt;
+        sql::PreparedStatement *p_stmt;
         sql::ResultSet *res;
-        string query1 = "SELECT Balance FROM Users WHERE ID = '" + std::to_string(userId) + "'";
-        stmt = con -> createStatement();
-        res = stmt -> executeQuery(query1);
+        // 1. Retrieve user's balance.
+        p_stmt = con -> prepareStatement(showBalance_query);
+        p_stmt -> setInt(1, userId);
+        res = p_stmt -> executeQuery();
         while(res -> next()){
-            actualBalance = res -> getDouble("Balance");
+            originalBalance = res -> getDouble("Balance");
         }
-        delete stmt;
         delete res;
-        newBalance = actualBalance - amount;
-        string query2 = "UPDATE Users SET Balance = '" + std::to_string(newBalance) + "' WHERE ID = '" + std::to_string(userId) + "'";
-        sql::Statement *stmt1;
-        stmt1 = con -> createStatement();
-        stmt1 -> execute(query2);
-        delete stmt1;
+        newBalance = originalBalance + amount;
+        // 2. Update user's balance
+        p_stmt = con -> prepareStatement(updateBalance_query);
+        p_stmt -> setDouble(1, newBalance);
+        p_stmt -> setInt(2, userId);
+        p_stmt -> executeQuery();
+        cout << "Operation completed!" << endl;
+        delete p_stmt;
     }catch(sql::SQLException e){
         cout << "ERROR (withdraw): " << e.what() << endl;
     }
