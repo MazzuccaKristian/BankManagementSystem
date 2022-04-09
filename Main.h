@@ -165,7 +165,6 @@ int Login(sql::Connection *con){
 void Registration(sql::Connection *con){
     string username, password, confirmPassword;
     bool registrationSuccess = false;
-    cin.ignore();
     do{
         cout << "Enter your username: ";
         getline(cin, username);
