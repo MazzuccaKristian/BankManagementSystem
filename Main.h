@@ -213,30 +213,6 @@ void ShowBalance(int userId, sql::Connection *con){
     }
 }
 
-void MakeNewDeposit(int userId, double deposit, sql::Connection *con){
-    double originalBalance, newBalance;
-    if(deposit < 0){
-        deposit = -deposit;
-    }
-    if(!con -> isValid()){
-        cout << "ERROR (new deposit): can't connect to DB" << endl;
-        exit(EXIT_FAILURE);
-    }
-    UpdateBalance(con, userId, deposit);
-}
-
-void Withdraw(int userId, double amount, sql::Connection *con){
-    double originalBalance, newBalance;
-    if(amount > 0){
-        amount = -amount;
-    }
-    if(!con -> isValid()){
-        cout << "ERROR (withdraw): can't connect to DB" << endl;
-        exit(EXIT_FAILURE);
-    }
-    UpdateBalance(con, userId, amount);
-}
-
 void UpdateBalance(sql::Connection *con,int userId, double amount){
     double originalBalance, newBalance;
     if(!con -> isValid()){
