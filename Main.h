@@ -218,7 +218,6 @@ void MakeNewDeposit(int userId, double deposit, sql::Connection *con){
     if(deposit < 0){
         deposit = -deposit;
     }
-    // TODO: this test can be a function, used many times.
     if(!con -> isValid()){
         cout << "ERROR (new deposit): can't connect to DB" << endl;
         exit(EXIT_FAILURE);
@@ -232,13 +231,8 @@ void Withdraw(int userId, double amount, sql::Connection *con){
         amount = -amount;
     }
     if(!con -> isValid()){
-        // Here if connection's down, attempt reconnection.
-        cout << "Reconnecting. Please, wait..." << endl;
-        con -> reconnect();
-        if(!con -> isValid()){
-            // Can't reach DB.
-            exit(EXIT_FAILURE);
-        }
+        cout << "ERROR (withdraw): can't connect to DB" << endl;
+        exit(EXIT_FAILURE);
     }
     UpdateBalance(con, userId, amount);
 }
