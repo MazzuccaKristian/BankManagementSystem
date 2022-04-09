@@ -37,15 +37,21 @@ void ShowMainMenu(){
 }
 
 /**
- * @brief Get raw input from user.
+ * @brief Retrieve input from user.
  * 
  * @return int - validated input.
  */
 int GetUserChoice(){
+    string rawInput;
     int input;
     do{
         cout << "Enter your choice: ";
-        cin >> input;
+        getline(cin, rawInput);
+        try{
+            input = std::stoi(rawInput);      
+        }catch(std::invalid_argument exception){
+            input = -1; // brute-force invalid value
+        }
     }while(!InputValidation(input));
     return input;
 }
