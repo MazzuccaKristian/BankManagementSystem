@@ -79,6 +79,7 @@ bool InputValidation(int input){
  */
 int StartLoginPhase(sql::Connection *con){
     bool isOptionValid = true;
+    string rawInput;
     int id;
     do{
     int input;
@@ -86,7 +87,12 @@ int StartLoginPhase(sql::Connection *con){
         cout << "1. Login;" << endl;
         cout << "2. Registration" << endl;
         cout << "Enter your choice: ";
-        cin >> input;
+        getline(cin, rawInput);
+        try{
+            input = std::stoi(rawInput);
+        }catch(std::invalid_argument exception){
+            input = -1; //brute-force invalid value.
+        }
         switch(input){
             case 1:
                 id = Login(con);
@@ -107,8 +113,6 @@ int StartLoginPhase(sql::Connection *con){
             default:
                 cout << "Option not allowed. Try again..." << endl;
                 isOptionValid = false;
-                cin.clear();
-                cin.ignore();
                 break;
         }
     }while(!isOptionValid);
@@ -123,7 +127,6 @@ int StartLoginPhase(sql::Connection *con){
 int Login(sql::Connection *con){
     string username, password;
     int id;
-    cin.ignore();
     cout << "Enter your username: ";
     getline(cin, username);
     cout << "Enter your password: ";
