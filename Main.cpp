@@ -5,13 +5,14 @@ int main(){
     int userChoice;
     int userID = -1; // default value, MUST be updated with login/registration.
     bool isUserLogged = false;
+    string rawInput;
 
     // DB connection
     sql::Driver *db_driver;
     sql::Connection *db_connection;
     try{
-        db_driver = get_driver_instance();
         cout << "Connecting...";
+        db_driver = get_driver_instance();
         db_connection = db_driver -> connect(db_host_complete, db_user, db_password);
         if(db_connection -> isValid()){
             db_connection -> setSchema(db_selectedschema);
@@ -54,10 +55,18 @@ int main(){
                     isUserLogged = true;
                 }
                 cout << "Enter the amount you want to deposit: ";
-                //TODO: possible check on amount (positive-only? non-zero?)
                 double deposit;
-                cin >> deposit;
-                MakeNewDeposit(userID, deposit, db_connection);
+                getline(cin, rawInput);
+                try{
+                    deposit = std::stod(rawInput);
+                }catch(std::invalid_argument excpetion){
+                    deposit = 0.0;
+                }
+                if(deposit < 0){
+                    deposit = -deposit;
+                }
+                UpdateBalance(db_connection, userID, deposit);
+                // MakeNewDeposit(userID, deposit, db_connection);
                 break;
 
             case 4:
@@ -67,8 +76,16 @@ int main(){
                 }
                 cout << "Enter the amount you want to withdraw: ";
                 double amount;
-                cin >> amount;
-                Withdraw(userID, amount, db_connection);
+                getline(cin, rawInput);
+                try{
+                    amount = std::stod(rawInput);
+                }catch(std::invalid_argument exception){
+                    amount = 0.0;
+                }
+                if(amount > 0){
+                    amount = -amount;
+                }
+                UpdateBalance(db_connection, userID, amount);
                 break;
         }
     }while(isStillWorking);
