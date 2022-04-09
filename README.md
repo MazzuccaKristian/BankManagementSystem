@@ -1,6 +1,6 @@
 # Bank Management System
-![Github Version](https://img.shields.io/badge/version-0.2.1-brightgreen) ![Generic badge](https://img.shields.io/badge/status-ongoing-brightgreen.svg)
 ![C++](https://img.shields.io/badge/C%2B%2B-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white) ![MySQL](https://img.shields.io/badge/mysql-%2300f.svg?style=for-the-badge&logo=mysql&logoColor=white)
+![Github Version](https://img.shields.io/badge/version-1.0.0-brightgreen) ![Generic badge](https://img.shields.io/badge/status-completed-brightgreen)
 
 ## Simple bank management system
 Manage your bank account with this simple console app.
