@@ -129,7 +129,7 @@ int Login(sql::Connection *con){
     int id;
     if(!con -> isValid()){
         // DB can't be reached.
-        cout << "ERROR: can't connect to DB." << endl;
+        cout << "ERROR (login): can't connect to DB." << endl;
         exit(EXIT_FAILURE);
     }
     cout << "Enter your username: ";
@@ -159,6 +159,10 @@ int Login(sql::Connection *con){
 void Registration(sql::Connection *con){
     string username, password, confirmPassword;
     bool registrationSuccess = false;
+    if(!con -> isValid()){
+        cout << "ERROR (registration): can't connect to DB" << endl;
+        exit(EXIT_FAILURE);
+    } 
     do{
         cout << "Enter your username: ";
         getline(cin, username);
@@ -167,10 +171,6 @@ void Registration(sql::Connection *con){
         cout << "Please, confirm your password: ";
         getline(cin, confirmPassword);
         if(password.compare(confirmPassword) == 0){
-            // Test DB connection
-            if(!con -> isValid()){
-                exit(EXIT_FAILURE);
-            }       
             // DB registration phase starts here.
             try{
                 sql::PreparedStatement *p_stmt;
@@ -192,15 +192,10 @@ void Registration(sql::Connection *con){
 }
 
 void ShowBalance(int userId, sql::Connection *con){
-    // TODO: this test can be a function, used many times.
     if(!con -> isValid()){
-        // Here if connection's down, attempt reconnection.
-        cout << "Reconnecting. Please, wait..." << endl;
-        con -> reconnect();
-        if(!con -> isValid()){
-            // Can't reach DB.
-            exit(EXIT_FAILURE);
-        }
+        // DB can't be reached.
+        cout << "ERROR (show balance): can't connect to DB." << endl;
+        exit(EXIT_FAILURE);
     } 
     try{
         sql::PreparedStatement *p_stmt;
