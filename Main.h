@@ -127,21 +127,15 @@ int StartLoginPhase(sql::Connection *con){
 int Login(sql::Connection *con){
     string username, password;
     int id;
+    if(!con -> isValid()){
+        // DB can't be reached.
+        cout << "ERROR: can't connect to DB." << endl;
+        exit(EXIT_FAILURE);
+    }
     cout << "Enter your username: ";
     getline(cin, username);
     cout << "Enter your password: ";
     getline(cin, password);
-    // connection test
-    // TODO: this test can be a function, used many times.
-    if(!con -> isValid()){
-        // Here if connection's down, attempt reconnection.
-        cout << "Reconnecting. Please, wait..." << endl;
-        con -> reconnect();
-        if(!con -> isValid()){
-            // Can't reach DB.
-            exit(EXIT_FAILURE);
-        }
-    }
     try{
         sql::PreparedStatement *p_stmt;
         sql::ResultSet *res;
