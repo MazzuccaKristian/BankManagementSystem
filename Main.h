@@ -239,6 +239,10 @@ void Withdraw(int userId, double amount, sql::Connection *con){
 
 void UpdateBalance(sql::Connection *con,int userId, double amount){
     double originalBalance, newBalance;
+    if(!con -> isValid()){
+        cout << "ERROR (update balance): can't connect to DB" << endl;
+        exit(EXIT_FAILURE);
+    }
     try{
         sql::PreparedStatement *p_stmt;
         sql::ResultSet *res;
