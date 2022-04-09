@@ -220,13 +220,8 @@ void MakeNewDeposit(int userId, double deposit, sql::Connection *con){
     }
     // TODO: this test can be a function, used many times.
     if(!con -> isValid()){
-        // Here if connection's down, attempt reconnection.
-        cout << "Reconnecting. Please, wait..." << endl;
-        con -> reconnect();
-        if(!con -> isValid()){
-            // Can't reach DB.
-            exit(EXIT_FAILURE);
-        }
+        cout << "ERROR (new deposit): can't connect to DB" << endl;
+        exit(EXIT_FAILURE);
     }
     UpdateBalance(con, userId, deposit);
 }
